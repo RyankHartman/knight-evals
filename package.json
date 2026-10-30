@@ -1,0 +1,15 @@
+{
+  "name": "knight-evals",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An evaluation harness for Knight, Ryan Hartman's AI chatbot: 63 recruiter-style test cases scored against the live product.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "eval": "node src/run.js",
+    "test": "node scripts/test-grade.js",
+    "regrade": "node src/regrade.js"
+  }
+}
