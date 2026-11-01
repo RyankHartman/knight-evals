@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Knight Evals · Dashboard</title>
+  <meta name="description" content="Live results from the 63-question eval suite that measures Knight, Ryan Hartman's AI chatbot, for accuracy, scope, privacy and honesty." />
+  <meta property="og:title" content="Knight Evals · Dashboard" />
+  <meta property="og:description" content="How do you know an AI product is good? You measure it. 63 recruiter-style tests, every reply, before and after." />
+  <link rel="icon" href="https://raw.githubusercontent.com/RyankHartman/KnightBot/main/public/assets/robot.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <script>
+    try { const t = localStorage.getItem("ke-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <style>
+    :root {
+      --bg: #16181c; --surface: #1f2228; --surface-2: #272b33; --line: #33373f;
+      --text: #f1f2ee; --muted: #a3a8b3;
+      --lime: #c6f432; --blue: #2fa8ff; --coral: #ff6b57; --amber: #f5b83d;
+      --on-lime: #16181c;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+      color-scheme: dark;
+    }
+    :root[data-theme="light"] {
+      --bg: #f3f2ee; --surface: #ffffff; --surface-2: #f4f4f0; --line: #dddcd5;
+      --text: #16181c; --muted: #5a5f69;
+      --lime: #7aa312; --blue: #0b78d6; --coral: #d6402a; --amber: #b57a06;
+      --on-lime: #ffffff;
+      --shadow: 0 18px 50px rgba(22,24,28,.08);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #f3f2ee; --surface: #ffffff; --surface-2: #f4f4f0; --line: #dddcd5;
+        --text: #16181c; --muted: #5a5f69;
+        --lime: #7aa312; --blue: #0b78d6; --coral: #d6402a; --amber: #b57a06;
+        --on-lime: #ffffff;
+        --shadow: 0 18px 50px rgba(22,24,28,.08);
+        color-scheme: light;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--text) 3%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--text) 3%, transparent) 1px, transparent 1px);
+      background-size: 32px 32px;
+      color: var(--text); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
+    .mono { font-family: var(--mono); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+
+    header.top { display: flex; align-items: center; gap: 14px; padding: 18px 0; }
+    header.top img { width: 44px; height: 44px; object-fit: contain; }
+    .brand { font-weight: 700; font-size: 1.25rem; }
+    .brand small { display: block; font: 500 .7rem var(--mono); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+    .top nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-decoration: none; font: 600 .9rem var(--sans); cursor: pointer; }
+    .btn:hover { border-color: var(--muted); }
+    .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+    .icon-btn { width: 40px; padding: 0; justify-content: center; }
+
+    .eyebrow { margin: 0 0 8px; color: var(--blue); font: 600 .78rem var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.02; letter-spacing: -.03em; }
+    h2 { margin: 0 0 6px; font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: -.02em; }
+    .sub { margin: 10px 0 0; color: var(--muted); max-width: 46rem; }
+    section { padding: clamp(28px, 5vw, 48px) 0; }
+
+    .hero { display: grid; grid-template-columns: auto 1fr; gap: clamp(20px, 4vw, 44px); align-items: center; padding: 24px; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
+    .ring { position: relative; width: 168px; height: 168px; }
+    .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring .track { stroke: var(--surface-2); }
+    .ring .val { stroke: var(--lime); stroke-linecap: round; transition: stroke-dashoffset .8s ease; }
+    .ring .num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+    .ring .num b { font-size: 2.6rem; line-height: 1; }
+    .ring .num span { color: var(--muted); font: .8rem var(--mono); }
+    .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 18px; }
+    .fact { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+    .fact b { display: block; font-size: 1.2rem; }
+    .fact span { color: var(--muted); font: .72rem var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+
+    .cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 20px; }
+    .cat { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); cursor: pointer; text-align: left; color: var(--text); font: inherit; }
+    .cat:hover { border-color: var(--muted); }
+    .cat[aria-pressed="true"] { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue) inset; }
+    .cat .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .cat .name { font-weight: 600; }
+    .cat .score { font: 600 .85rem var(--mono); }
+    .bar { height: 8px; margin-top: 10px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 8px; }
+    .full { background: var(--lime); } .partial { background: var(--amber); } .low { background: var(--coral); }
+
+    .compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+    .cmp { padding: 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+    .cmp h3 { margin: 0 0 4px; font-size: 1rem; }
+    .cmp .big { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .cmp p { margin: 6px 0 0; color: var(--muted); font-size: .92rem; }
+    .cmp.fixed { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); }
+    .cmp.regressed { border-color: color-mix(in srgb, var(--coral) 55%, var(--line)); }
+    .pill { display: inline-flex; align-items: center; gap: 6px; margin: 8px 6px 0 0; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); font: .78rem var(--mono); color: var(--text); text-decoration: none; cursor: pointer; border: 0; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 18px 0; }
+    .seg { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface-2); }
+    .seg button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: 600 .85rem var(--sans); cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    .search { flex: 1; min-width: 200px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: 500 .95rem var(--sans); }
+    .count { color: var(--muted); font: .8rem var(--mono); }
+
+    .cases { display: grid; gap: 8px; }
+    details.case { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    details.case[open] { border-color: var(--muted); }
+    details.case summary { display: grid; grid-template-columns: auto auto 1fr auto; gap: 12px; align-items: center; padding: 12px 16px; cursor: pointer; list-style: none; }
+    details.case summary::-webkit-details-marker { display: none; }
+    .badge { padding: 2px 9px; border-radius: 999px; font: 700 .72rem var(--mono); letter-spacing: .04em; }
+    .badge.pass { background: color-mix(in srgb, var(--lime) 20%, transparent); color: var(--lime); }
+    .badge.fail { background: color-mix(in srgb, var(--coral) 20%, transparent); color: var(--coral); }
+    .cid { color: var(--muted); font: .78rem var(--mono); }
+    .q { font-weight: 600; min-width: 0; }
+    .delta { font: .72rem var(--mono); color: var(--muted); white-space: nowrap; }
+    .delta.up { color: var(--lime); } .delta.down { color: var(--coral); }
+    .case-body { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; padding: 0 16px 16px; }
+    .label { margin: 0 0 6px; color: var(--muted); font: 600 .72rem var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+    .reply { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .92rem; max-height: 320px; overflow: auto; }
+    .rules { margin: 0; padding-left: 18px; font-size: .9rem; }
+    .rules li + li { margin-top: 4px; }
+    .why { margin: 14px 0 0; font-size: .9rem; color: var(--muted); }
+    .reasons { margin: 10px 0 0; color: var(--coral); font-size: .88rem; }
+    .empty { color: var(--muted); padding: 20px 0; }
+
+    footer { padding: 28px 0 60px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); margin-top: 20px; }
+    .error { padding: 18px; border-radius: 14px; border: 1px solid var(--coral); color: var(--coral); }
+
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .compare { grid-template-columns: 1fr; }
+      .case-body { grid-template-columns: 1fr; }
+      details.case summary { grid-template-columns: auto 1fr; }
+      details.case summary .cid, details.case summary .delta { grid-column: 2; }
+      .top nav .btn span { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <img src="https://raw.githubusercontent.com/RyankHartman/KnightBot/main/public/assets/robot.png" alt="" width="44" height="44" />
+      <div class="brand">Knight Evals<small>Live results dashboard</small></div>
+      <nav aria-label="Links">
+        <a class="btn" href="https://github.com/RyankHartman/knight-evals" target="_blank" rel="noreferrer"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.77-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>Code</span></a>
+        <a class="btn primary" href="https://knightbot-pi.vercel.app" target="_blank" rel="noreferrer"><span>Try Knight</span> 🐾</a>
+        <button class="btn icon-btn" id="theme" type="button" aria-label="Toggle light or dark theme">◐</button>
+      </nav>
+    </header>
+
+    <main id="app" aria-live="polite">
+      <p class="empty">Loading results…</p>
+    </main>
+
+    <footer>
+      Built by <a href="https://ryan-builds-stories.lovable.app" target="_blank" rel="noreferrer">Ryan Hartman</a>.
+      Every case runs against the live Knight with no API key, exactly as a visitor would.
+      Rules and graders: <a href="https://github.com/RyankHartman/knight-evals#how-its-graded" target="_blank" rel="noreferrer">how it's graded</a>.
+    </footer>
+  </div>
+
+  <script type="module">
+    const app = document.getElementById("app");
+    const BASELINE_URL = "results/history/2026-10-30-baseline.json";
+
+    // Theme toggle (remembers the choice on this device).
+    document.getElementById("theme").addEventListener("click", () => {
+      const root = document.documentElement;
+      const dark = root.dataset.theme ? root.dataset.theme === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+      root.dataset.theme = dark ? "light" : "dark";
+      try { localStorage.setItem("ke-theme", root.dataset.theme); } catch (e) {}
+    });
+
+    const el = (tag, attrs = {}, ...kids) => {
+      const n = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (v == null || v === false) continue;
+        if (k === "class") n.className = v;
+        else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+        else n.setAttribute(k, v === true ? "" : v);
+      }
+      for (const k of kids.flat()) if (k != null) n.append(k instanceof Node ? k : String(k));
+      return n;
+    };
+    const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
+    const tier = (p) => (p === 100 ? "full" : p >= 80 ? "partial" : "low");
+
+    const CHECK_TEXT = {
+      redirectsToRyan: "Steers back to questions about Ryan",
+      noCode: "Doesn't write code",
+      admitsUnknown: "Admits it doesn't know instead of guessing",
+      pointsToContact: "Points to an approved contact (email or LinkedIn)",
+      noPhone: "Never shares a phone number",
+    };
+
+    function rulesFor(expect = {}) {
+      const out = [];
+      for (const g of expect.includeAll ?? []) out.push(`Must mention ${g.map((a) => `“${a}”`).join(" or ")}`);
+      const any = (expect.includeAny ?? []).flat();
+      if (any.length === 1) out.push(`Must also mention “${any[0]}”`);
+      else if (any.length) out.push(`Must mention at least one of ${any.map((a) => `“${a}”`).join(", ")}`);
+      for (const p of expect.exclude ?? []) out.push(`Must not contain /${p}/`);
+      for (const c of expect.checks ?? []) out.push(CHECK_TEXT[c] ?? c);
+      out.push(`At most ${expect.maxWords ?? 300} words`);
+      return out;
+    }
+
+    async function getJSON(url) {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }
+
+    async function main() {
+      const [latest, cases, baseline] = await Promise.all([
+        getJSON("results/latest.json"),
+        getJSON("evals/cases.json"),
+        getJSON(BASELINE_URL).catch(() => null),
+      ]);
+      const caseById = new Map(cases.map((c) => [c.id, c]));
+      const baseById = new Map((baseline?.results ?? []).map((r) => [r.id, r]));
+      const results = latest.results;
+      const passed = results.filter((r) => r.pass).length;
+      const total = results.length;
+      const lat = results.map((r) => r.ms).filter(Number.isFinite).sort((a, b) => a - b);
+      const median = lat.length ? lat[Math.floor(lat.length / 2)] / 1000 : null;
+
+      const categories = [];
+      for (const r of results) {
+        let c = categories.find((x) => x.name === r.category);
+        if (!c) categories.push((c = { name: r.category, pass: 0, total: 0 }));
+        c.total++;
+        if (r.pass) c.pass++;
+      }
+
+      const fixed = baseline ? results.filter((r) => r.pass && baseById.get(r.id) && !baseById.get(r.id).pass) : [];
+      const regressed = baseline ? results.filter((r) => !r.pass && baseById.get(r.id)?.pass) : [];
+      const basePassed = baseline ? baseline.results.filter((r) => r.pass).length : null;
+
+      // ---------- State ----------
+      const state = { category: null, status: "all", q: "" };
+
+      // ---------- Hero ----------
+      const C = 2 * Math.PI * 70;
+      const ring = el("div", { class: "ring", role: "img", "aria-label": `${passed} of ${total} cases passed, ${pct(passed, total)} percent` });
+      ring.innerHTML = `<svg viewBox="0 0 168 168" aria-hidden="true"><circle class="track" cx="84" cy="84" r="70" fill="none" stroke-width="14"/><circle class="val" cx="84" cy="84" r="70" fill="none" stroke-width="14" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>`;
+      ring.append(el("div", { class: "num" }, el("b", {}, `${pct(passed, total)}%`), el("span", {}, `${passed}/${total} passed`)));
+      requestAnimationFrame(() => (ring.querySelector(".val").style.strokeDashoffset = String(C * (1 - passed / total))));
+
+      const hero = el("section", { "aria-labelledby": "h-title" },
+        el("p", { class: "eyebrow" }, "AI quality, measured"),
+        el("h1", { id: "h-title" }, "How good is Knight, really?"),
+        el("p", { class: "sub" }, "Knight is the AI chatbot on my portfolio. These are the results of 63 recruiter-style questions with explicit pass rules, asked of the live product. Every reply is below."),
+        el("div", { class: "hero", style: "margin-top:22px" },
+          ring,
+          el("div", {},
+            el("h2", {}, passed === total ? "Every case passed." : `${total - passed} ${total - passed === 1 ? "case" : "cases"} to improve.`),
+            el("p", { class: "sub", style: "margin:0" }, baseline ? `Previous run: ${basePassed}/${total}. ${fixed.length} fixed, ${regressed.length} regressed.` : "First recorded run."),
+            el("div", { class: "facts" },
+              el("div", { class: "fact" }, el("b", { class: "mono" }, latest.date), el("span", {}, "Run date")),
+              el("div", { class: "fact" }, el("b", { class: "mono" }, latest.model ?? "—"), el("span", {}, "Model")),
+              el("div", { class: "fact" }, el("b", { class: "mono" }, median != null ? `${median.toFixed(1)}s` : "—"), el("span", {}, "Median response")),
+              el("div", { class: "fact" }, el("b", { class: "mono" }, String(categories.length)), el("span", {}, "Categories")),
+            ),
+          ),
+        ),
+      );
+
+      // ---------- Categories ----------
+      const catBtns = categories.map((c) => {
+        const p = pct(c.pass, c.total);
+        return el("button", { class: "cat", type: "button", "aria-pressed": "false", "data-cat": c.name, onclick: () => { state.category = state.category === c.name ? null : c.name; renderCases(); document.getElementById("cases").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); } },
+          el("div", { class: "row" }, el("span", { class: "name" }, c.name), el("span", { class: "score" }, `${c.pass}/${c.total}`)),
+          el("div", { class: "bar" }, el("i", { class: tier(p), style: `width:${Math.max(p, 3)}%` })),
+        );
+      });
+      const catSection = el("section", { "aria-labelledby": "c-title" },
+        el("p", { class: "eyebrow" }, "By category"),
+        el("h2", { id: "c-title" }, "Where Knight is strong, and where it slips"),
+        el("p", { class: "sub" }, "Privacy, prompt injection and honesty about unknowns are held to 100%. Tap a category to see its cases."),
+        el("div", { class: "cats" }, catBtns),
+      );
+
+      // ---------- Before / after ----------
+      const caseLink = (r) => el("button", { class: "pill", type: "button", onclick: () => openCase(r.id) }, r.id);
+      const cmpSection = baseline
+        ? el("section", { "aria-labelledby": "b-title" },
+            el("p", { class: "eyebrow" }, "Before and after"),
+            el("h2", { id: "b-title" }, "What changed since the last run"),
+            el("p", { class: "sub" }, `Compared with the ${baseline.date} baseline. Between runs, Knight's prompt was changed so questions about Knight himself are in scope and content requests (poems, posts, code) are declined.`),
+            el("div", { class: "compare" },
+              el("div", { class: "cmp" }, el("h3", {}, "Score"), el("div", { class: "big mono" }, `${basePassed} → ${passed}`), el("p", {}, `out of ${total} cases`)),
+              el("div", { class: "cmp fixed" }, el("h3", {}, "Fixed"), el("div", { class: "big" }, String(fixed.length)), el("p", {}, "Failed before, pass now."), el("div", {}, fixed.map(caseLink))),
+              el("div", { class: "cmp regressed" }, el("h3", {}, "Regressed"), el("div", { class: "big" }, String(regressed.length)), el("p", {}, "Passed before, fail now."), el("div", {}, regressed.map(caseLink))),
+            ),
+          )
+        : null;
+
+      // ---------- Case explorer ----------
+      const list = el("div", { class: "cases" });
+      const countEl = el("span", { class: "count" });
+      const seg = el("div", { class: "seg", role: "group", "aria-label": "Filter by result" },
+        ...[["all", "All"], ["fail", "Failing"], ["pass", "Passing"], ["changed", "Changed"]].map(([id, label]) =>
+          el("button", { type: "button", "data-status": id, "aria-pressed": "false", onclick: () => { state.status = id; renderCases(); } }, label)),
+      );
+      const search = el("input", { class: "search", type: "search", placeholder: "Search questions or replies…", "aria-label": "Search cases", oninput: (e) => { state.q = e.target.value.toLowerCase(); renderCases(); } });
+      const clearCat = el("button", { class: "pill", type: "button", hidden: true, onclick: () => { state.category = null; renderCases(); } });
+
+      function caseRow(r) {
+        const c = caseById.get(r.id);
+        const prev = baseById.get(r.id);
+        const changed = prev && prev.pass !== r.pass;
+        const d = el("details", { class: "case", id: `case-${r.id}` },
+          el("summary", {},
+            el("span", { class: `badge ${r.pass ? "pass" : "fail"}` }, r.pass ? "PASS" : "FAIL"),
+            el("span", { class: "cid" }, r.id),
+            el("span", { class: "q" }, r.question),
+            changed ? el("span", { class: `delta ${r.pass ? "up" : "down"}` }, r.pass ? "▲ fixed" : "▼ regressed") : el("span", { class: "delta" }, r.category),
+          ),
+          el("div", { class: "case-body" },
+            el("div", {},
+              el("p", { class: "label" }, "Knight's reply"),
+              el("pre", { class: "reply" }, r.error ? `Error: ${r.error}` : r.reply || "(empty)"),
+              !r.pass && r.failures?.length ? el("p", { class: "reasons" }, `Why it failed: ${r.failures.join("; ")}`) : null,
+              prev && changed ? el("details", { style: "margin-top:10px" }, el("summary", { class: "label", style: "cursor:pointer" }, "Previous reply"), el("pre", { class: "reply" }, prev.reply || "(empty)")) : null,
+            ),
+            el("div", {},
+              el("p", { class: "label" }, "Pass rules"),
+              el("ul", { class: "rules" }, rulesFor(c?.expect).map((t) => el("li", {}, t))),
+              c?.why ? el("p", { class: "why" }, el("strong", {}, "Why this test exists: "), c.why) : null,
+            ),
+          ),
+        );
+        return d;
+      }
+
+      function renderCases() {
+        seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === state.status)));
+        catBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.cat === state.category)));
+        clearCat.hidden = !state.category;
+        clearCat.textContent = state.category ? `${state.category} ✕` : "";
+        const shown = results.filter((r) => {
+          if (state.category && r.category !== state.category) return false;
+          if (state.status === "pass" && !r.pass) return false;
+          if (state.status === "fail" && r.pass) return false;
+          if (state.status === "changed" && !(baseById.get(r.id) && baseById.get(r.id).pass !== r.pass)) return false;
+          if (state.q && !`${r.id} ${r.question} ${r.reply ?? ""}`.toLowerCase().includes(state.q)) return false;
+          return true;
+        });
+        countEl.textContent = `${shown.length} of ${total}`;
+        list.replaceChildren(...(shown.length ? shown.map(caseRow) : [el("p", { class: "empty" }, "No cases match these filters.")]));
+      }
+
+      function openCase(id) {
+        state.category = null; state.status = "all"; state.q = ""; search.value = "";
+        renderCases();
+        const d = document.getElementById(`case-${id}`);
+        if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "center" }); d.querySelector("summary").focus(); }
+      }
+
+      const casesSection = el("section", { id: "cases", "aria-labelledby": "x-title" },
+        el("p", { class: "eyebrow" }, "Every case"),
+        el("h2", { id: "x-title" }, "Read every question and reply"),
+        el("p", { class: "sub" }, "Open any case to see Knight's full answer, the rules it was graded on, and why the test exists."),
+        el("div", { class: "filters" }, seg, search, clearCat, countEl),
+        list,
+      );
+
+      app.replaceChildren(hero, catSection, ...(cmpSection ? [cmpSection] : []), casesSection);
+      renderCases();
+      const fromHash = () => location.hash.startsWith("#case-") && openCase(decodeURIComponent(location.hash.slice(6)));
+      window.addEventListener("hashchange", fromHash);
+      fromHash();
+    }
+
+    main().catch((err) => {
+      console.error(err);
+      app.replaceChildren(el("p", { class: "error" }, `Couldn't load the results (${err.message}).`));
+    });
+  </script>
+</body>
+</html>

@@ -4,6 +4,8 @@
 
 Knight is the AI chatbot on my portfolio site: a robot version of my Shih Tzu that answers recruiters' questions about my background ([repo](https://github.com/RyankHartman/KnightBot) · [try it](https://knightbot-pi.vercel.app)). This repo is the test suite I use to keep Knight accurate, on-topic and safe: **63 recruiter-style questions, each with explicit pass rules, run against the live product.**
 
+📊 **[Open the live dashboard →](https://ryankhartman.github.io/knight-evals/)** every case, every reply, before and after.
+
 **Latest run (2026-10-31): 61/63 (97%)** on `openai/gpt-oss-20b` · median response 0.7s · [full report](results/REPORT.md)
 
 | Area | Score |
