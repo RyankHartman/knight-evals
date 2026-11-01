@@ -4,6 +4,7 @@
 //   npm run eval                       # all cases
 //   npm run eval -- --only Privacy     # one category (case-insensitive substring)
 //   npm run eval -- --limit 5          # first N cases (quick smoke test)
+//   npm run eval -- --ids off-06,life-06  # specific cases, merged into the latest results
 //
 // Env:
 //   KNIGHT_URL   chat endpoint (default: the live demo)
@@ -31,11 +32,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function ask(messages) {
   for (let attempt = 0; ; attempt++) {
     const started = Date.now();
-    const res = await fetch(KNIGHT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "about", messages }),
-    });
+    let res;
+    try {
+      res = await fetch(KNIGHT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "about", messages }),
+      });
+    } catch (err) {
+      // Network blip (DNS, connection reset): wait and retry instead of crashing the run.
+      if (attempt < MAX_RETRIES) {
+        console.log(`    network error (${err.cause?.code || err.message}), retrying in 15s`);
+        await sleep(15000);
+        continue;
+      }
+      return { reply: "", error: `network error: ${err.cause?.code || err.message}`, ms: Date.now() - started };
+    }
     const data = await res.json().catch(() => ({}));
     const ms = Date.now() - started;
 
@@ -57,6 +69,21 @@ async function main() {
   const limit = Number(flag("--limit")) || undefined;
   if (only) cases = cases.filter((c) => c.category.toLowerCase().includes(only.toLowerCase()));
   if (limit) cases = cases.slice(0, limit);
+  const ids = flag("--ids")?.split(",").map((s) => s.trim());
+  if (ids) cases = cases.filter((c) => ids.includes(c.id));
+
+  // With --ids, merge into the latest run instead of replacing it.
+  const latestPath = path.join(root, "results", "latest.json");
+  const previous = ids && fs.existsSync(latestPath) ? JSON.parse(fs.readFileSync(latestPath, "utf8")) : null;
+  const save = (results, model) => {
+    const merged = previous
+      ? previous.results.map((p) => results.find((r) => r.id === p.id) ?? p)
+      : results;
+    const run = { date: new Date().toISOString().slice(0, 10), endpoint: KNIGHT_URL, model: model ?? previous?.model, results: merged };
+    fs.mkdirSync(path.join(root, "results"), { recursive: true });
+    fs.writeFileSync(latestPath, JSON.stringify(run, null, 2));
+    return run;
+  };
 
   console.log(`Running ${cases.length} cases against ${KNIGHT_URL}\n`);
   const results = [];
@@ -70,12 +97,11 @@ async function main() {
     const { pass, failures } = error ? { pass: false, failures: [] } : grade(reply, c.expect);
     results.push({ id: c.id, category: c.category, question, reply, pass, failures, error, ms, why: c.why });
     console.log(`${pass ? "PASS" : "FAIL"}  ${c.id.padEnd(9)} ${question.slice(0, 60)}${pass ? "" : `\n      -> ${error || failures.join("; ")}`}`);
+    save(results, model); // save after every case so a crash loses nothing
     if (i < cases.length - 1) await sleep(DELAY_MS);
   }
 
-  const run = { date: new Date().toISOString().slice(0, 10), endpoint: KNIGHT_URL, model, results };
-  fs.mkdirSync(path.join(root, "results"), { recursive: true });
-  fs.writeFileSync(path.join(root, "results", "latest.json"), JSON.stringify(run, null, 2));
+  const run = save(results, model);
   const { passed, total } = writeReport(run);
   console.log(`\nScore: ${passed}/${total} (${pct(passed, total)}%). Report: results/REPORT.md`);
 }
